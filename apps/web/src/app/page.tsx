@@ -72,6 +72,15 @@ export default function Dashboard() {
     }
   };
 
+  const getFreshnessInfo = (lastCheckedAt?: Date) => {
+    if (!lastCheckedAt) return { label: 'Very stale', color: 'var(--danger)' };
+    const diffMins = (new Date().getTime() - new Date(lastCheckedAt).getTime()) / 1000 / 60;
+    if (diffMins < 10) return { label: 'Fresh', color: 'var(--success)' };
+    if (diffMins < 30) return { label: 'Maybe old', color: 'var(--warning)' };
+    if (diffMins < 120) return { label: 'Stale', color: '#f97316' }; // orange
+    return { label: 'Very stale', color: 'var(--danger)' };
+  };
+
   if (loading) {
     return <div className="animate-pulse">Loading dashboard data...</div>;
   }
@@ -151,6 +160,7 @@ export default function Dashboard() {
                 <TableHead>Shared</TableHead>
                 <TableHead>Quota %</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Freshness</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -166,6 +176,17 @@ export default function Dashboard() {
                   <TableCell>{acc.isShared ? 'Yes' : 'No'}</TableCell>
                   <TableCell>{acc.quotaStatus?.quotaPercent ?? 100}%</TableCell>
                   <TableCell>{getStatusBadge(acc.quotaStatus?.status)}</TableCell>
+                  <TableCell>
+                    {(() => {
+                      const freshness = getFreshnessInfo(acc.quotaStatus?.lastCheckedAt);
+                      return (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                          <span style={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: freshness.color }} />
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{freshness.label}</span>
+                        </div>
+                      );
+                    })()}
+                  </TableCell>
                   <TableCell>
                     <Button 
                       size="sm" 
@@ -187,7 +208,7 @@ export default function Dashboard() {
               ))}
               {accounts.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} style={{ textAlign: 'center', padding: '2rem' }}>
+                  <TableCell colSpan={7} style={{ textAlign: 'center', padding: '2rem' }}>
                     No accounts found. Go to Accounts tab to add one.
                   </TableCell>
                 </TableRow>
