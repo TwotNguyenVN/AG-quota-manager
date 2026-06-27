@@ -3,7 +3,7 @@ import { prisma } from 'database';
 
 export async function POST(request: Request) {
   try {
-    const { accountId, quotaPercent, status, errorMessage, note } = await request.json();
+    const { accountId, quotaPercent, status, errorMessage, note, resetEstimate } = await request.json();
 
     if (!accountId || quotaPercent === undefined || !status) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -19,6 +19,7 @@ export async function POST(request: Request) {
           status,
           source: 'Manual',
           errorMessage,
+          resetEstimate,
           lastCheckedAt: new Date(),
         },
       });

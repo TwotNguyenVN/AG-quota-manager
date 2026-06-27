@@ -44,6 +44,10 @@ export default function Dashboard() {
     e.preventDefault();
     if (!selectedAccount) return;
     
+    let status = 'Green';
+    if (updateData.quotaPercent < 20) status = 'Red';
+    else if (updateData.quotaPercent < 80) status = 'Yellow';
+    
     try {
       await fetch('/api/quota/manual-update', {
         method: 'POST',
@@ -51,7 +55,8 @@ export default function Dashboard() {
         body: JSON.stringify({
           accountId: selectedAccount.id,
           quotaPercent: Number(updateData.quotaPercent),
-          resetEstimate: updateData.resetEstimate,
+          status,
+          resetEstimate: updateData.resetEstimate ? new Date(updateData.resetEstimate).toISOString() : null,
           note: updateData.note
         })
       });
@@ -60,6 +65,14 @@ export default function Dashboard() {
     } catch (error) {
       console.error('Failed to update quota', error);
     }
+  };
+
+  const formatForInput = (dateString?: string | null) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '';
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   };
 
   const getStatusBadge = (status: string) => {
@@ -195,7 +208,7 @@ export default function Dashboard() {
                         setSelectedAccount(acc);
                         setUpdateData({ 
                           quotaPercent: acc.quotaStatus?.quotaPercent ?? 100, 
-                          resetEstimate: acc.quotaStatus?.resetEstimate ?? '', 
+                          resetEstimate: formatForInput(acc.quotaStatus?.resetEstimate), 
                           note: '' 
                         });
                         setIsUpdateModalOpen(true);
@@ -241,8 +254,8 @@ export default function Dashboard() {
             <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Reset Estimate (Optional)</label>
             <input 
               type="datetime-local"
-              value={updateData.resetEstimate ? new Date(updateData.resetEstimate).toISOString().slice(0, 16) : ''}
-              onChange={(e) => setUpdateData({...updateData, resetEstimate: e.target.value ? new Date(e.target.value).toISOString() : ''})}
+              value={updateData.resetEstimate}
+              onChange={(e) => setUpdateData({...updateData, resetEstimate: e.target.value})}
               style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-glass)', color: 'white' }} 
             />
           </div>
