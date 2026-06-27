@@ -1,1 +1,1 @@
-{"name":"database","version":"1.0.0","main":"index.ts","types":"index.ts","devDependencies":{"@types/node":"^20.19.43","prisma":"^7.8.0","ts-node":"^10.9.2","typescript":"^5.9.3"},"dependencies":{"@prisma/client":"^7.8.0"}}
+{"name":"database","version":"1.0.0","main":"index.ts","types":"index.ts","devDependencies":{"@types/node":"^20.19.43","prisma":"^5.22.0","ts-node":"^10.9.2","typescript":"^5.9.3"},"dependencies":{"@prisma/client":"^5.22.0"}}
