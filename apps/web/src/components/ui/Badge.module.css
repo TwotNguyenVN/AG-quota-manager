@@ -1,0 +1,67 @@
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+/* Variants */
+.default {
+  background: var(--border);
+  color: var(--text-primary);
+}
+.default .dot { background: var(--text-secondary); }
+
+.green {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+.green .dot { 
+  background: var(--success); 
+  box-shadow: 0 0 8px var(--success);
+}
+
+.yellow {
+  background: var(--warning-bg);
+  color: var(--warning);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+.yellow .dot { 
+  background: var(--warning); 
+  box-shadow: 0 0 8px var(--warning);
+}
+
+.red {
+  background: var(--danger-bg);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+.red .dot { 
+  background: var(--danger); 
+  box-shadow: 0 0 8px var(--danger);
+}
+
+.locked {
+  background: var(--locked-bg);
+  color: var(--locked);
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+.locked .dot { background: var(--locked); }
+
+.unknown {
+  background: var(--surface);
+  color: var(--text-muted);
+  border: 1px dashed var(--border);
+}
+.unknown .dot { background: var(--text-muted); }
