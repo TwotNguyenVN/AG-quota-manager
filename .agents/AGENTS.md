@@ -15,3 +15,4 @@
   - `revert`: hoàn tác thay đổi.
 - SAU ĐÓ: Phải tạo Pull Request (PR) và merge vào nhánh `main`.
 - TUYỆT ĐỐI KHÔNG ĐƯỢC push/merge trực tiếp vào nhánh `main`. Luôn luôn tạo nhánh mới và mở PR.
+- KHÔNG ĐƯỢC xóa nhánh trên remote sau khi merge. Để nguyên nhánh trên GitHub để tiện theo dõi.
