@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     if (quotaPercent < 20) status = 'Red';
     else if (quotaPercent < 50) status = 'Yellow';
 
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       const updatedStatus = await tx.quotaStatus.update({
         where: { accountId },
         data: {

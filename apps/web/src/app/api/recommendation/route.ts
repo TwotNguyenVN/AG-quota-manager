@@ -15,7 +15,7 @@ export async function GET() {
     // 1. Quota > 50%
     // 2. Không share (isShared === false) ưu tiên hơn
     // 3. Priority cao ưu tiên hơn
-    const sorted = activeAccounts.sort((a, b) => {
+    const sorted = activeAccounts.sort((a: any, b: any) => {
       const aQuota = a.quotaStatus?.quotaPercent ?? 0;
       const bQuota = b.quotaStatus?.quotaPercent ?? 0;
 

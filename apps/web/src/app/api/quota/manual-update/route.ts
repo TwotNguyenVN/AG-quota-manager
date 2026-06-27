@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     }
 
     // Use a transaction to ensure both status and history are updated
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. Update status
       const updatedStatus = await tx.quotaStatus.update({
         where: { accountId },
