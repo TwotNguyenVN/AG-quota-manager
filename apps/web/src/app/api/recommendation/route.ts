@@ -13,7 +13,7 @@ export async function GET() {
     }
 
     // 1. Loại bỏ các account không đạt điều kiện (Red, Locked, Unknown)
-    const validAccounts = activeAccounts.filter(acc => {
+    const validAccounts = activeAccounts.filter((acc: any) => {
       const status = acc.quotaStatus?.status;
       return status !== 'Red' && status !== 'Locked' && status !== 'Unknown';
     });
