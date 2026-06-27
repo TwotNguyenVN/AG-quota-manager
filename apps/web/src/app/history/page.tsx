@@ -8,14 +8,42 @@ import { format } from 'date-fns';
 
 export default function HistoryPage() {
   const [history, setHistory] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  
+  const [filters, setFilters] = useState({
+    accountId: '',
+    timeRange: '', // today, 7days, 30days
+    source: '', // Manual, Mock
+    errorOnly: false
+  });
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
 
   useEffect(() => {
     fetchHistory();
-  }, []);
+  }, [filters]);
+
+  const fetchAccounts = async () => {
+    try {
+      const res = await fetch('/api/accounts');
+      const data = await res.json();
+      setAccounts(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchHistory = async () => {
     try {
-      const res = await fetch('/api/history');
+      const query = new URLSearchParams();
+      if (filters.accountId) query.append('accountId', filters.accountId);
+      if (filters.timeRange) query.append('timeRange', filters.timeRange);
+      if (filters.source) query.append('source', filters.source);
+      if (filters.errorOnly) query.append('errorOnly', 'true');
+
+      const res = await fetch(`/api/history?${query.toString()}`);
       const data = await res.json();
       setHistory(Array.isArray(data) ? data : []);
     } catch (e) {
@@ -38,6 +66,49 @@ export default function HistoryPage() {
       <div className="page-header">
         <h1 className="page-title">History</h1>
         <p className="page-description">View all quota update events.</p>
+      </div>
+
+      <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+        <select 
+          value={filters.accountId} 
+          onChange={e => setFilters({...filters, accountId: e.target.value})}
+          style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-glass)', color: 'var(--text-primary)' }}
+        >
+          <option value="">All Accounts</option>
+          {accounts.map(acc => (
+            <option key={acc.id} value={acc.id}>{acc.nickname}</option>
+          ))}
+        </select>
+
+        <select 
+          value={filters.timeRange} 
+          onChange={e => setFilters({...filters, timeRange: e.target.value})}
+          style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-glass)', color: 'var(--text-primary)' }}
+        >
+          <option value="">All Time</option>
+          <option value="today">Today</option>
+          <option value="7days">Last 7 Days</option>
+          <option value="30days">Last 30 Days</option>
+        </select>
+
+        <select 
+          value={filters.source} 
+          onChange={e => setFilters({...filters, source: e.target.value})}
+          style={{ padding: '0.5rem', borderRadius: '4px', border: '1px solid var(--border)', background: 'var(--surface-glass)', color: 'var(--text-primary)' }}
+        >
+          <option value="">All Sources</option>
+          <option value="Manual">Manual</option>
+          <option value="Mock">Mock Refresh</option>
+        </select>
+
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+          <input 
+            type="checkbox" 
+            checked={filters.errorOnly}
+            onChange={e => setFilters({...filters, errorOnly: e.target.checked})}
+          />
+          Errors Only
+        </label>
       </div>
 
       <Card>

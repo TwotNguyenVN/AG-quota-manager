@@ -12,25 +12,51 @@ export async function GET() {
       return NextResponse.json({ message: 'No active accounts available', recommendation: null });
     }
 
-    // 1. Quota > 50%
-    // 2. Không share (isShared === false) ưu tiên hơn
-    // 3. Priority cao ưu tiên hơn
-    const sorted = activeAccounts.sort((a: any, b: any) => {
+    // 1. Loại bỏ các account không đạt điều kiện (Red, Locked, Unknown)
+    const validAccounts = activeAccounts.filter(acc => {
+      const status = acc.quotaStatus?.status;
+      return status !== 'Red' && status !== 'Locked' && status !== 'Unknown';
+    });
+
+    if (validAccounts.length === 0) {
+      return NextResponse.json({ message: 'No valid accounts available', recommendation: null });
+    }
+
+    const now = new Date();
+
+    // Hàm tính toán freshness score (càng nhỏ càng fresh)
+    const getFreshnessScore = (lastCheckedAt?: Date) => {
+      if (!lastCheckedAt) return 4; // Very stale
+      const diffMins = (now.getTime() - new Date(lastCheckedAt).getTime()) / 1000 / 60;
+      if (diffMins < 10) return 1; // Fresh
+      if (diffMins < 30) return 2; // Maybe old
+      if (diffMins < 120) return 3; // Stale
+      return 4; // Very stale
+    };
+
+    // Sắp xếp
+    const sorted = validAccounts.sort((a: any, b: any) => {
+      const aFreshness = getFreshnessScore(a.quotaStatus?.lastCheckedAt);
+      const bFreshness = getFreshnessScore(b.quotaStatus?.lastCheckedAt);
+
+      // Rule 1: Ưu tiên dữ liệu Fresh
+      if (aFreshness !== bFreshness) return aFreshness - bFreshness;
+
       const aQuota = a.quotaStatus?.quotaPercent ?? 0;
       const bQuota = b.quotaStatus?.quotaPercent ?? 0;
 
-      // Rule 1: Ưu tiên Quota cao (Green)
+      // Rule 2: Ưu tiên Quota cao (Green > Yellow)
       if (aQuota > 50 && bQuota <= 50) return -1;
       if (aQuota <= 50 && bQuota > 50) return 1;
 
-      // Rule 2: Ưu tiên không share
+      // Rule 3: Ưu tiên không share
       if (!a.isShared && b.isShared) return -1;
       if (a.isShared && !b.isShared) return 1;
 
-      // Rule 3: Priority cao hơn
+      // Rule 4: Priority cao hơn
       if (a.priority !== b.priority) return b.priority - a.priority;
 
-      // Rule 4: Quota phần trăm cao hơn
+      // Rule 5: Quota phần trăm cao hơn
       return bQuota - aQuota;
     });
 
