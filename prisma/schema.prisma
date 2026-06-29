@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Account {
+  id                String        @id @default(cuid())
+  nickname          String
+  emailHint         String?
+  plan              String        @default("AI Pro")
+  chromeProfileName String?
+  chromeProfilePath String?
+  browserType       String        @default("chrome")
+  isShared          Boolean       @default(false)
+  sharedWith        String?
+  priority          String        @default("medium")
+  isActive          Boolean       @default(true)
+  note              String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  quotaStatus       QuotaStatus?
+  quotaHistory      QuotaHistory[]
+}
+
+model QuotaStatus {
+  id              String   @id @default(cuid())
+  accountId       String   @unique
+  quotaPercent    Int?
+  status          String   @default("unknown")
+  resetEstimate   String?
+  lastCheckedAt   DateTime?
+  source          String   @default("unknown")
+  errorCode       String?
+  errorMessage    String?
+  lastErrorAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model QuotaHistory {
+  id              String   @id @default(cuid())
+  accountId       String
+  quotaPercent    Int?
+  status          String
+  resetEstimate   String?
+  source          String
+  checkedAt       DateTime
+  errorCode       String?
+  errorMessage    String?
+  note            String?
+  createdAt       DateTime @default(now())
+
+  account         Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+}
+
+model Setting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  action     String
+  entityType String
+  entityId   String?
+  metadata   String?
+  createdAt  DateTime @default(now())
+}
