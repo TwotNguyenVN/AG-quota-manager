@@ -1,562 +1,280 @@
-# Project Requirements: Local Antigravity Quota Dashboard
+# AG Quota Manager — Tổng quan dự án
 
-## 1. Project Name
+## 1. Ý tưởng chính
 
-**Local Antigravity Quota Dashboard**
+**AG Quota Manager** là một ứng dụng chạy local trên máy người dùng, dùng để quản lý và theo dõi quota của nhiều Google account đang sử dụng với Antigravity IDE.
 
-Tên ngắn: **AG Quota Manager**
-
-## 2. Project Purpose
-
-Dự án này dùng để xây dựng một công cụ local giúp quản lý và theo dõi quota của nhiều Google account đang dùng với Google Antigravity.
-
-Người dùng hiện có nhiều Google account có gói AI Pro. Một số account chỉ người dùng sử dụng, một số account có thể được người khác dùng chung trên máy khác. Vì vậy quota của từng account có thể thay đổi mà người dùng không biết ngay.
-
-Công cụ này cần giúp người dùng biết:
-
-* Account nào còn nhiều quota.
-* Account nào gần hết quota.
-* Account nào đã hết quota.
-* Account nào đang được share với người khác.
-* Account nào nên dùng tiếp.
-* Account nào nên tránh dùng.
-* Lần cuối quota được kiểm tra là khi nào.
-
-Công cụ này chỉ là **quota dashboard**, không phải AI router, không phải proxy, không phải tool tự động xoay account.
-
-## 3. Main Goal
-
-Xây dựng một dashboard chạy local trên máy người dùng để quản lý khoảng 8 Google account AI Pro dùng với Antigravity.
-
-Dashboard cần hỗ trợ:
-
-* Quản lý danh sách account.
-* Theo dõi quota/status của từng account.
-* Ghi chú account nào đang share với ai.
-* Lưu lịch sử quota.
-* Cho phép refresh quota thủ công hoặc bán tự động.
-* Gợi ý account nào nên dùng.
-* Không lưu password, cookie, OAuth refresh token hoặc secret nhạy cảm.
-
-## 4. Non-Goals
-
-Dự án này không được làm các chức năng sau:
-
-* Không tạo OpenAI-compatible API proxy.
-* Không route request AI qua nhiều account.
-* Không tự động xoay account khi hết quota.
-* Không bypass quota.
-* Không lưu Google password.
-* Không lưu Google cookie trong database.
-* Không lưu OAuth refresh token.
-* Không lưu access token dài hạn.
-* Không tự động đăng nhập Google.
-* Không expose dashboard ra public internet.
-* Không dùng account người khác nếu chưa có session hợp lệ trên máy người dùng.
-* Không can thiệp vào request của Antigravity.
-* Không chỉnh sửa file/session nhạy cảm của Antigravity.
-* Không làm tool giống AI router.
-
-## 5. Current User Setup
-
-Người dùng đang có cả hai loại Chrome profile.
-
-### 5.1 Main Chrome Profile
-
-Một Chrome profile chính có login nhiều Google account cùng lúc.
-
-Ví dụ:
+Dự án lấy phong cách giống 9Router ở phần:
 
 ```text
-Main Chrome Profile
-├── acc01@gmail.com
-├── acc02@gmail.com
-├── acc03@gmail.com
-├── acc04@gmail.com
-├── acc05@gmail.com
-├── acc06@gmail.com
-├── acc07@gmail.com
-└── acc08@gmail.com
+Local web dashboard
+Local API server
+SQLite/local storage
+Settings page
+Status dashboard
+Provider/account table
+Import/export config
+Dashboard chạy bằng localhost
 ```
 
-Profile này chỉ nên dùng cho thao tác bình thường của người dùng. Không nên dùng profile này làm nguồn chính để auto-check quota, vì có thể bị nhầm account do cơ chế nhiều account trong cùng một Chrome profile.
+Nhưng dự án **không phải AI router**.
 
-### 5.2 Separate Chrome Profiles
-
-Mỗi Google account cũng có một Chrome profile riêng.
-
-Ví dụ:
+Dự án không làm:
 
 ```text
-Chrome Profile AG-01 → acc01@gmail.com
-Chrome Profile AG-02 → acc02@gmail.com
-Chrome Profile AG-03 → acc03@gmail.com
-Chrome Profile AG-04 → acc04@gmail.com
-Chrome Profile AG-05 → acc05@gmail.com
-Chrome Profile AG-06 → acc06@gmail.com
-Chrome Profile AG-07 → acc07@gmail.com
-Chrome Profile AG-08 → acc08@gmail.com
+Không proxy AI request
+Không tạo OpenAI-compatible endpoint
+Không auto-rotate account
+Không bypass quota
+Không lưu password/cookie/OAuth token
+Không gửi prompt thay người dùng
 ```
 
-Đây là nguồn chính mà dashboard nên dùng để check quota.
-
-Mỗi profile riêng nên chỉ login một Google account chính để tránh đọc nhầm quota.
-
-## 6. Required Operating Model
-
-Dashboard phải hoạt động theo hướng:
+Mục tiêu chính là:
 
 ```text
-Local Dashboard
-+
-Separate Chrome Profile per account
-+
-Manual/Semi-auto quota refresh
-+
-Quota history
-+
-Recommendation logic
-+
-No password/cookie/token storage
-+
-No proxy
-+
-No auto account rotation
+Tự kiểm tra quota của nhiều account
+Hiển thị account nào còn quota
+Hiển thị account nào gần hết quota
+Hiển thị account nào lỗi hoặc cần login lại
+Gợi ý account nên dùng tiếp
+Lưu lịch sử quota
+Cho phép xem nhanh quota trong Antigravity IDE qua extension
 ```
 
-Người dùng không cần mở sẵn 8 tab cho 8 account.
+---
 
-Điều kiện cần là:
+## 2. Vấn đề dự án giải quyết
 
-* Máy người dùng đã login sẵn 8 account trong 8 Chrome profile riêng.
-* Các session đó vẫn còn hiệu lực.
-* Dashboard biết profile nào tương ứng với account nào.
-* Khi cần refresh, dashboard có thể kiểm tra lần lượt từng profile.
+Người dùng có nhiều Google account có gói AI Pro để dùng với Antigravity.
 
-## 7. Core Features
+Một số account có thể được người khác dùng chung trên máy khác, nên quota có thể giảm mà người dùng không biết.
 
-### 7.1 Account Management
+Nếu phải mở từng account để kiểm tra thủ công thì rất mất thời gian.
 
-Dashboard phải cho phép người dùng thêm, sửa, xóa account.
-
-Mỗi account cần có các trường:
+Vì vậy, dự án cần giúp người dùng:
 
 ```text
-Account ID
-Nickname
-Email hint
-Chrome profile name/path
-Plan
-Shared status
-Shared with
-Priority
-Note
-Active/Inactive
-Created at
-Updated at
+Không cần mở từng account để xem quota
+Có một dashboard tổng hợp tất cả account
+Biết account nào còn dùng được
+Biết account nào sắp hết
+Biết account nào bị tụt quota nhanh
+Biết account nào có lỗi session/login
+Xem nhanh quota ngay trong Antigravity IDE
 ```
 
-Ví dụ:
+---
+
+## 3. Kiến trúc tổng thể
 
 ```text
-Nickname: AG-01
-Email hint: acc01@gmail.com
-Plan: AI Pro
-Chrome Profile: AG-01
-Shared: No
-Priority: High
-Note: Main account for coding
+AG Quota Manager
+├── Local Web Dashboard
+│   ├── Dashboard Overview
+│   ├── Account Management
+│   ├── Quota Status
+│   ├── Quota History
+│   ├── Recommendation
+│   ├── Analytics
+│   ├── Settings
+│   └── Import / Export
+│
+├── Local API Server
+│   ├── Accounts API
+│   ├── Quota API
+│   ├── History API
+│   ├── Recommendation API
+│   ├── Settings API
+│   └── Health API
+│
+├── SQLite Database
+│   ├── accounts
+│   ├── quota_status
+│   ├── quota_history
+│   ├── settings
+│   └── audit_logs
+│
+├── Quota Reader
+│   ├── Refresh one account
+│   ├── Refresh all accounts
+│   ├── Detect quota status
+│   ├── Detect session/account error
+│   └── Save results to SQLite
+│
+└── Optional Antigravity IDE Extension
+    ├── Status Bar
+    ├── Quick Quota View
+    ├── Recommended Account
+    ├── Quick Update / Refresh
+    └── Open Dashboard Command
 ```
 
-### 7.2 Quota Status Management
-
-Mỗi account cần có trạng thái quota hiện tại.
-
-Các trường cần có:
+Luồng hoạt động:
 
 ```text
-Current quota percent
-Status
-Last checked at
-Reset estimate
-Last refresh result
-Error message
-Manual override flag
+User mở dashboard localhost
+→ Dashboard gọi Local API
+→ Local API đọc/ghi SQLite
+→ Quota Reader kiểm tra quota account
+→ Dashboard hiển thị quota/status/history/recommendation
+
+User đang dùng Antigravity IDE
+→ Extension gọi Local API
+→ Extension hiển thị nhanh account nên dùng
 ```
 
-Status đề xuất:
+---
+
+## 4. Công nghệ đề xuất
+
+Stack chính:
 
 ```text
-Green   → còn nhiều quota
-Yellow  → quota trung bình
-Red     → gần hết hoặc đã hết
-Locked  → đang bị giới hạn lâu hơn hoặc chưa thể dùng
-Unknown → chưa check được hoặc chưa có dữ liệu
+Next.js
+React
+TypeScript
+SQLite
+Prisma hoặc Drizzle
+Local API Routes
+Tailwind CSS hoặc CSS Modules
+Node.js runtime
 ```
 
-Ngưỡng mặc định:
+Dashboard chạy local:
 
 ```text
-Green  → quota > 50%
-Yellow → quota từ 20% đến 50%
-Red    → quota < 20%
-Empty  → quota = 0%
+http://localhost:3028
 ```
 
-Người dùng nên có thể chỉnh ngưỡng này trong settings.
-
-### 7.3 Manual Update
-
-Dashboard phải có chế độ nhập quota thủ công.
-
-Người dùng có thể tự xem quota trong Antigravity rồi nhập vào dashboard.
-
-Manual update cần cho phép nhập:
+Hoặc:
 
 ```text
-Quota percent
-Status
-Reset estimate
-Note
-Checked time
+http://127.0.0.1:3028
 ```
 
-Manual mode là bắt buộc, vì đây là fallback an toàn nhất nếu auto refresh bị lỗi.
-
-### 7.4 Semi-Auto Refresh
-
-Dashboard nên có chế độ refresh bán tự động.
-
-Các chức năng:
-
-```text
-Refresh one account
-Refresh all accounts
-Auto refresh every N minutes
-Stop auto refresh
-Show last refresh time
-Show refresh error
-```
-
-Khi bấm **Refresh All**, dashboard sẽ kiểm tra lần lượt từng account dựa trên Chrome profile riêng.
-
-Không cần mở sẵn 8 tab. Tool có thể mở/check từng profile khi cần.
-
-Refresh không được lưu password/cookie/token vào database của app.
-
-### 7.5 Handling Shared Accounts
-
-Một số account có thể được người khác sử dụng trên máy khác.
-
-Dashboard cần hỗ trợ ghi chú:
-
-```text
-Shared: Yes/No
-Shared with: name/note
-Shared risk level
-Last unexpected drop
-```
-
-Nếu account được người khác dùng và quota giảm, dashboard có thể phát hiện ở lần refresh tiếp theo, miễn là máy người dùng vẫn có session đăng nhập hợp lệ của account đó.
-
-Ví dụ:
-
-```text
-10:00 → AG-03 còn 80%
-10:15 → người khác dùng AG-03 trên máy khác
-10:20 → dashboard refresh AG-03
-10:20 → AG-03 còn 40%
-```
-
-Dashboard nên ghi nhận quota drop trong history.
-
-### 7.6 Quota History
-
-Dashboard phải lưu lịch sử quota theo thời gian.
-
-Mỗi lần update quota, dù manual hay auto, cần ghi một bản ghi history.
-
-History record gồm:
-
-```text
-Account ID
-Quota percent
-Status
-Source: manual/auto
-Checked at
-Reset estimate
-Error message
-Note
-```
-
-Dashboard cần có trang xem history của từng account.
-
-Nên có các filter:
-
-```text
-Today
-Last 7 days
-Last 30 days
-By account
-By status
-Shared accounts only
-```
-
-### 7.7 Recommendation Logic
-
-Dashboard cần gợi ý account nào nên dùng tiếp.
-
-Logic mặc định:
-
-```text
-Nếu quota > 50% và không shared → ưu tiên cao
-Nếu quota > 50% và shared → ưu tiên trung bình
-Nếu quota từ 20% đến 50% → chỉ nên dùng task nhỏ
-Nếu quota < 20% → tránh dùng
-Nếu quota = 0% → không dùng
-Nếu status Locked → không dùng
-Nếu last checked quá cũ → cảnh báo cần refresh trước khi dùng
-```
-
-Dashboard nên hiển thị:
-
-```text
-Recommended account
-Reason
-Warning if data is stale
-```
-
-Ví dụ:
-
-```text
-Recommended: AG-01
-Reason: quota còn 82%, không shared, last checked 4 phút trước.
-```
-
-### 7.8 Stale Data Warning
-
-Nếu account chưa được check trong một khoảng thời gian nhất định, dashboard phải cảnh báo dữ liệu có thể cũ.
-
-Mặc định:
-
-```text
-Fresh      → checked trong 0–10 phút
-Maybe old  → checked trong 10–30 phút
-Stale      → checked quá 30 phút
-Very stale → checked quá 2 giờ
-```
-
-Dashboard nên hiển thị cảnh báo:
-
-```text
-Quota data may be outdated. Please refresh before using this account.
-```
-
-### 7.9 Export Data
-
-Dashboard nên hỗ trợ export dữ liệu.
-
-Format cần có:
-
-```text
-CSV
-JSON
-```
-
-Dữ liệu export:
-
-```text
-Account list
-Current quota status
-Quota history
-Notes
-```
-
-Export không được chứa secret.
-
-## 8. User Interface Requirements
-
-### 8.1 Main Dashboard Page
-
-Trang chính cần hiển thị bảng account.
-
-Cột đề xuất:
-
-```text
-Account
-Email hint
-Plan
-Quota
-Status
-Shared
-Recommended
-Last checked
-Reset estimate
-Actions
-```
-
-Actions:
-
-```text
-Refresh
-Edit
-History
-Open Profile
-Mark as Avoid
-```
-
-### 8.2 Account Detail Page
-
-Mỗi account cần có trang chi tiết.
-
-Thông tin cần hiển thị:
-
-```text
-Nickname
-Email hint
-Plan
-Chrome profile
-Shared info
-Current quota
-Status
-Last checked
-Reset estimate
-History chart/table
-Notes
-```
-
-### 8.3 Settings Page
-
-Settings cần có:
-
-```text
-Default auto refresh interval
-Quota status thresholds
-Stale data thresholds
-Local dashboard lock option
-Export/backup option
-Profile mapping settings
-```
-
-### 8.4 Visual Status
-
-Dashboard nên dùng màu hoặc badge rõ ràng:
-
-```text
-Green badge  → Safe to use
-Yellow badge → Use carefully
-Red badge    → Avoid
-Gray badge   → Unknown
-Lock badge   → Locked
-```
-
-## 9. Security Requirements
-
-Đây là phần bắt buộc.
-
-### 9.1 Must Not Store Secrets
-
-App không được lưu:
-
-```text
-Google password
-Google cookie
-OAuth refresh token
-Access token
-2FA code
-Recovery code
-Raw browser session
-Antigravity secret token dài hạn
-```
-
-### 9.2 Local Only
-
-Dashboard phải chạy local.
-
-Mặc định chỉ bind:
+App chỉ nên bind local:
 
 ```text
 127.0.0.1
 localhost
 ```
 
-Không bind mặc định vào:
+Không mặc định expose ra mạng ngoài:
 
 ```text
-0.0.0.0
+Không bind 0.0.0.0
+Không mở public internet
 ```
 
-Không expose public internet.
+---
 
-### 9.3 No Proxy
+## 5. Dữ liệu chính cần quản lý
 
-App không được tạo endpoint để Antigravity gửi request AI qua dashboard.
+### Account
 
-Không có chức năng:
+Mỗi account cần lưu:
 
 ```text
-/v1/chat/completions
-/v1/models
-proxy endpoint
-account rotation endpoint
+Nickname
+Email hint
+Plan
+Chrome profile name
+Chrome profile path
+Shared status
+Shared with
+Priority
+Note
+Active/Inactive
 ```
 
-### 9.4 Read-Only Behavior
-
-App chỉ nên đọc quota/status hoặc nhận input từ người dùng.
-
-App không được:
+Ví dụ:
 
 ```text
-Gửi prompt thay người dùng
-Chạy request AI thay người dùng
-Chỉnh sửa account Google
-Tự logout/login account
-Tự đổi account trong Antigravity
+AG-01
+acc01@gmail.com
+AI Pro
+Chrome Profile: AG-01
+Shared: No
+Priority: High
+Note: Main coding account
 ```
 
-### 9.5 Manual Fallback
-
-Nếu auto refresh lỗi, app phải cho phép nhập tay.
-
-Không được ép người dùng cung cấp cookie/token để sửa lỗi.
-
-## 10. Refresh Behavior Requirements
-
-### 10.1 Refresh All
-
-Khi người dùng bấm **Refresh All**, app cần:
+### Quota Status
 
 ```text
-1. Lấy danh sách account active
-2. Sắp xếp theo priority hoặc thứ tự người dùng đặt
-3. Check từng account một
-4. Cập nhật quota/status nếu thành công
-5. Ghi history
-6. Nếu lỗi, ghi error message
-7. Không dừng toàn bộ quá trình nếu một account lỗi
+Account ID
+Quota percent
+Status
+Reset estimate
+Last checked at
+Source
+Error message
 ```
 
-### 10.2 Auto Refresh
-
-Auto refresh nên có interval mặc định:
+### Quota History
 
 ```text
-5 hoặc 10 phút
+Account ID
+Quota percent
+Status
+Source
+Checked at
+Reset estimate
+Error message
+Note
 ```
 
-Không nên refresh quá nhanh.
-
-Không khuyến khích:
+### Settings
 
 ```text
-30 giây/lần
-1 phút/lần nếu không cần thiết
+Green threshold
+Red threshold
+Stale data threshold
+Refresh interval
+Dashboard port
+Recommendation strategy
+Security options
 ```
 
-### 10.3 Error Handling
+---
 
-Nếu check quota lỗi, app cần hiển thị lỗi rõ ràng:
+## 6. Chức năng lõi
+
+### 6.1 Account & Profile Mapping
+
+Người dùng khai báo 8 account và map với Chrome Profile riêng.
+
+Ví dụ:
+
+```text
+AG-01 → Chrome Profile AG-01
+AG-02 → Chrome Profile AG-02
+AG-03 → Chrome Profile AG-03
+...
+AG-08 → Chrome Profile AG-08
+```
+
+Mục tiêu là để tool biết account nào ứng với profile nào khi refresh quota.
+
+---
+
+### 6.2 Auto Quota Reader
+
+Đây là chức năng quan trọng nhất.
+
+Tool cần có module đọc quota thật từ Antigravity/local session nếu có thể.
+
+Mục tiêu:
+
+```text
+Refresh AG-01
+→ đọc quota AG-01
+→ cập nhật quota_status
+→ ghi quota_history
+```
+
+Nếu lỗi:
 
 ```text
 Profile not found
@@ -567,227 +285,545 @@ Timeout
 Unknown error
 ```
 
-Account lỗi nên chuyển sang status:
+Tool không được lưu cookie/password/token.
+
+---
+
+### 6.3 Refresh One Account
+
+Người dùng có thể bấm refresh từng account.
 
 ```text
-Unknown
+Refresh AG-01
+Refresh AG-02
+Refresh AG-03
 ```
 
-Không được tự xóa dữ liệu quota cũ nếu refresh lỗi. Chỉ cần đánh dấu dữ liệu có thể cũ.
+Khi refresh:
 
-## 11. Data Model Suggestion
+```text
+App dùng profile mapping
+→ gọi quota-reader
+→ lấy quota thật nếu được
+→ cập nhật SQLite
+→ hiển thị kết quả
+```
 
-### 11.1 Account Table
+---
+
+### 6.4 Refresh All Accounts
+
+Đây là chức năng chính giúp dự án có giá trị.
+
+```text
+Refresh All
+→ check AG-01
+→ check AG-02
+→ check AG-03
+→ ...
+→ check AG-08
+```
+
+Yêu cầu:
+
+```text
+Một account lỗi không làm dừng toàn bộ
+Account nào đọc được thì cập nhật
+Account nào lỗi thì ghi lỗi riêng
+Có last checked
+Có error message
+Có quota history
+```
+
+---
+
+### 6.5 Auto Refresh Scheduler
+
+Sau khi Refresh All ổn định, thêm auto refresh.
+
+Mặc định:
+
+```text
+5–10 phút/lần
+```
+
+Không nên refresh quá nhanh.
+
+Dashboard sẽ tự cập nhật:
+
+```text
+AG-01 còn 82%
+AG-02 còn 35%
+AG-03 còn 0%
+AG-04 lỗi session expired
+```
+
+Nếu người khác dùng chung account làm quota tụt, dashboard sẽ thấy ở lần refresh tiếp theo.
+
+---
+
+### 6.6 Status Dashboard
+
+Dashboard hiển thị tổng quan:
+
+```text
+Total accounts
+Green accounts
+Yellow accounts
+Red accounts
+Error accounts
+Shared accounts
+Stale accounts
+Recommended account
+Last refresh time
+```
+
+Account table:
+
+```text
+Account | Profile | Plan | Quota | Status | Shared | Last Checked | Error | Actions
+```
+
+---
+
+### 6.7 Recommendation Engine
+
+Tool tự gợi ý account nên dùng.
+
+Logic:
+
+```text
+Quota > 50% + not shared + fresh data → ưu tiên cao nhất
+Quota > 50% + shared + fresh data → ưu tiên trung bình
+Quota 20–50% → chỉ dùng task nhỏ
+Quota < 20% → tránh dùng
+Quota = 0% → không dùng
+Locked → không dùng
+Unknown/Error → không dùng
+Stale data → cần refresh trước khi dùng
+```
+
+Ví dụ:
+
+```text
+Recommended: AG-01
+Reason: quota còn 82%, không shared, vừa check 3 phút trước.
+```
+
+---
+
+### 6.8 Quota History & Analytics
+
+Tool lưu lịch sử quota.
+
+Ví dụ:
+
+```text
+AG-03: 80% → 40%
+AG-02: 50% → 12%
+AG-04: error session expired
+```
+
+Cảnh báo:
+
+```text
+AG-03 tụt quota nhanh, có thể người khác đang dùng.
+AG-02 gần hết quota.
+AG-04 cần login lại.
+```
+
+Analytics nên có:
+
+```text
+Quota over time
+Quota drop by account
+Fastest draining account
+Most stable account
+Shared account with highest drop
+Accounts needing login
+```
+
+---
+
+### 6.9 Manual Override / Fallback
+
+Manual update không phải chức năng chính.
+
+Manual chỉ dùng khi:
+
+```text
+Quota reader lỗi
+Account bị logout
+Antigravity đổi cơ chế
+Người dùng muốn override tạm
+```
+
+Nên gọi là:
+
+```text
+Manual Override / Fallback Update
+```
+
+Không nên gọi là tính năng chính của MVP.
+
+---
+
+### 6.10 Import / Export Config
+
+Dự án cần export/import dữ liệu giống local config.
+
+Export gồm:
 
 ```text
 accounts
-- id
-- nickname
-- email_hint
-- plan
-- chrome_profile_name
-- chrome_profile_path
-- is_shared
-- shared_with
-- priority
-- is_active
-- note
-- created_at
-- updated_at
-```
-
-### 11.2 Quota Status Table
-
-```text
 quota_status
-- id
-- account_id
-- quota_percent
-- status
-- reset_estimate
-- last_checked_at
-- source
-- error_message
-- created_at
-- updated_at
-```
-
-### 11.3 Quota History Table
-
-```text
 quota_history
-- id
-- account_id
-- quota_percent
-- status
-- reset_estimate
-- source
-- checked_at
-- error_message
-- note
-- created_at
-```
-
-### 11.4 Settings Table
-
-```text
 settings
-- id
-- key
-- value
-- updated_at
+audit_logs
+exported_at
+app_version
 ```
 
-## 12. Suggested Tech Stack
-
-Preferred stack:
+Không export:
 
 ```text
-Frontend: Next.js / React
-Backend: Next.js API routes or Express
-Database: SQLite
-Runtime: Node.js
-Automation: optional Playwright
-Storage: local only
+password
+cookie
+OAuth token
+access token
+raw browser session
+2FA code
+recovery code
 ```
 
-Alternative desktop stack:
+---
+
+### 6.11 Antigravity IDE Extension
+
+Extension là phần mở rộng sau khi web dashboard ổn định.
+
+Extension không thay thế dashboard.
+
+Extension dùng để xem nhanh quota trong IDE.
+
+Chức năng:
 
 ```text
-Tauri or Electron
+Status bar quota summary
+Sidebar account list
+Recommended account
+Open dashboard command
+Refresh data command
+Quick manual override nếu cần
+```
+
+Extension gọi Local API:
+
+```text
+GET /api/health
+GET /api/quota/status
+GET /api/recommendation
+POST /api/quota/refresh-all
+```
+
+Hiển thị trong status bar:
+
+```text
+AG: AG-01 · 82% · Green
+```
+
+Sidebar:
+
+```text
+Recommended
+└── AG-01 · 82% · Green
+
+Accounts
+├── AG-01 · 82% · Green
+├── AG-02 · 35% · Yellow
+└── AG-03 · 0% · Red
+```
+
+---
+
+## 7. Các phase phát triển đề xuất
+
+### Phase 0 — Scope & Architecture
+
+Chốt dự án là local web dashboard phong cách 9Router, nhưng không proxy.
+
+Kết quả:
+
+```text
+README
+ARCHITECTURE
+ROADMAP
+SECURITY
+```
+
+---
+
+### Phase 1 — Next.js Local Dashboard Foundation
+
+Tạo app local:
+
+```text
+Next.js
+React
+TypeScript
+Dashboard localhost
+Basic layout
+Sidebar/topbar
+```
+
+---
+
+### Phase 2 — SQLite Database & Local API
+
+Tạo SQLite và API:
+
+```text
+accounts
+quota_status
+quota_history
+settings
+audit_logs
+```
+
+API:
+
+```text
+/api/accounts
+/api/quota/status
+/api/quota/refresh-one
+/api/quota/refresh-all
+/api/recommendation
+/api/history
+/api/settings
+/api/health
+```
+
+---
+
+### Phase 3 — Account & Chrome Profile Mapping
+
+Cho phép thêm/sửa/xóa account và map Chrome profile.
+
+Mục tiêu:
+
+```text
+AG-01 → Chrome Profile AG-01
+AG-02 → Chrome Profile AG-02
+...
+```
+
+---
+
+### Phase 4 — Quota Reader Prototype
+
+Tạo module đọc quota.
+
+Mục tiêu:
+
+```text
+Refresh one account
+Return quota percent/status/reset estimate
+Return error if failed
+No secret storage
+```
+
+---
+
+### Phase 5 — Refresh One
+
+Tạo nút refresh từng account.
+
+```text
+Refresh AG-01
+→ đọc quota
+→ cập nhật SQLite
+→ ghi history
+```
+
+---
+
+### Phase 6 — Refresh All
+
+Tạo chức năng quan trọng nhất.
+
+```text
+Refresh All 8 accounts
+→ từng account được check riêng
+→ lỗi account nào ghi account đó
+→ không dừng toàn bộ
+```
+
+---
+
+### Phase 7 — Auto Refresh Scheduler
+
+Tự refresh mỗi 5–10 phút.
+
+Có thể bật/tắt trong settings.
+
+---
+
+### Phase 8 — Status Dashboard
+
+Hiển thị tổng quan account/quota giống local status dashboard.
+
+```text
+Green/Yellow/Red/Error count
+Recommended account
+Last refresh
+Account table
+```
+
+---
+
+### Phase 9 — Recommendation Engine
+
+Gợi ý account nên dùng.
+
+Không chọn account hết quota/lỗi/stale.
+
+---
+
+### Phase 10 — History & Analytics
+
+Lưu lịch sử quota và phát hiện tụt quota nhanh.
+
+---
+
+### Phase 11 — Manual Override / Fallback
+
+Thêm chức năng nhập/sửa quota thủ công khi auto reader lỗi.
+
+---
+
+### Phase 12 — Import / Export Config
+
+Backup/restore dữ liệu local.
+
+---
+
+### Phase 13 — Security Hardening
+
+Đảm bảo:
+
+```text
+No password
+No cookie
+No OAuth token
+No proxy
+No auto-rotate
+Local only
+Audit log
+```
+
+---
+
+### Phase 14 — Antigravity IDE Extension
+
+Extension đọc dữ liệu từ Local API và hiển thị nhanh trong IDE.
+
+---
+
+### Phase 15 — Packaging & Release
+
+Đóng gói app:
+
+```text
+npm install
+npm run dev
+npm run build
+npm start
+```
+
+Sau này có thể đóng gói desktop bằng:
+
+```text
+Tauri hoặc Electron
+```
+
+---
+
+## 8. MVP đúng nên làm
+
+MVP có giá trị thật phải gồm:
+
+```text
+Next.js local dashboard
 SQLite
-React UI
-```
-
-MVP nên ưu tiên web local app trước vì dễ làm và dễ test.
-
-## 13. Development Phases
-
-### Phase 1: Manual MVP
-
-Mục tiêu: có dashboard an toàn dùng được ngay.
-
-Yêu cầu:
-
-```text
-Account CRUD
-Manual quota update
-Status badge
-Shared account notes
-Last checked time
-Quota history
-Recommendation logic
-CSV/JSON export
-```
-
-Phase này không cần auto refresh.
-
-### Phase 2: Semi-Auto Refresh
-
-Mục tiêu: giảm thao tác thủ công.
-
-Yêu cầu:
-
-```text
-Map account to Chrome profile
+Local API
+Account/profile mapping
+Quota reader prototype
 Refresh one account
 Refresh all accounts
-Auto refresh interval
+Quota status table
+Recommendation
+History
 Error handling
-Session expired warning
+Manual fallback
+No secret storage
+No proxy
+No auto-rotate
 ```
 
-### Phase 3: Analytics
+Không nên chỉ làm manual update.
 
-Mục tiêu: giúp người dùng hiểu usage pattern.
+Manual update chỉ là fallback.
 
-Yêu cầu:
+---
+
+## 9. Bản hoàn chỉnh nên có
+
+Bản hoàn chỉnh:
 
 ```text
-Quota history chart
-Quota drop detection
-Fast-drain warning
-Daily/weekly summary
-Recommended account ranking
-Stale data warning
+Local web dashboard giống phong cách 9Router
+SQLite/local storage
+Local API server
+Settings page
+Status dashboard
+Provider/account table
+Import/export config
+Auto quota reader
+Refresh all accounts
+Auto refresh scheduler
+Quota history
+Analytics
+Recommendation engine
+Antigravity extension
+Security hardening
+Packaging rõ ràng
 ```
 
-### Phase 4: Security Hardening
+---
 
-Mục tiêu: dùng lâu dài an toàn.
+## 10. Kết luận
 
-Yêu cầu:
+AG Quota Manager nên phát triển theo hướng:
 
 ```text
-Local-only binding
-Optional dashboard password
-Backup/restore local data
-Audit log
-No secret scan check
-Settings validation
+Next.js + React
+Local API routes
+SQLite
+Dashboard localhost
+Auto quota reader
+Refresh all accounts
+Optional Antigravity extension
 ```
 
-## 14. Acceptance Criteria
-
-Dự án được xem là đạt MVP nếu:
+Điểm cốt lõi:
 
 ```text
-Người dùng thêm được 8 account.
-Mỗi account có nickname, email hint, plan, profile mapping.
-Người dùng nhập quota thủ công được.
-Dashboard hiển thị Green/Yellow/Red/Unknown.
-Dashboard lưu lịch sử quota.
-Dashboard ghi chú được account nào shared.
-Dashboard gợi ý account nên dùng.
-Dashboard cảnh báo nếu dữ liệu quota quá cũ.
-Dashboard export được CSV hoặc JSON.
-App không lưu password/cookie/token.
-App chạy local trên localhost.
-App không có proxy endpoint.
+Tool phải tự check quota.
+Refresh All là tính năng chính.
+Manual chỉ là fallback.
+Không proxy.
+Không auto-rotate.
+Không lưu secret.
 ```
 
-Phase 2 được xem là đạt nếu:
-
-```text
-Dashboard refresh được từng account theo Chrome profile riêng.
-Dashboard refresh all account lần lượt.
-Một account lỗi không làm hỏng toàn bộ refresh.
-Dashboard ghi rõ lỗi refresh.
-Dashboard vẫn cho nhập manual khi auto refresh lỗi.
-```
-
-## 15. Important Design Decisions
-
-Các quyết định sau là bắt buộc:
-
-```text
-Use separate Chrome profile per account as the main source.
-Do not use the main Chrome profile with many accounts for auto-check.
-Manual mode must always exist.
-Semi-auto refresh is optional but preferred.
-Do not store Google secrets.
-Do not build proxy.
-Do not auto-rotate accounts.
-Do not expose dashboard publicly.
-Do not require other users to install an agent.
-```
-
-## 16. Final Summary
-
-Dự án cần xây dựng một **local quota dashboard** để quản lý nhiều Google account AI Pro dùng với Antigravity.
-
-Thiết kế đúng là:
-
-```text
-8 Google accounts
-→ 8 separate Chrome profiles
-→ Local dashboard maps each profile to one account
-→ User can manually or semi-automatically refresh quota
-→ Dashboard stores status/history/notes
-→ Dashboard recommends which account to use
-→ No password/cookie/token storage
-→ No proxy
-→ No account rotation
-```
-
-Mục tiêu cuối cùng là giúp người dùng quản lý quota an toàn, rõ ràng, dễ theo dõi, và tránh rủi ro của các công cụ router hoặc multi-account proxy.
+Đây mới là hướng giúp dự án thật sự hữu ích cho người dùng có nhiều Google account dùng với Antigravity.
