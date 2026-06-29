@@ -1,10 +1,12 @@
-# AG Quota Manager — Tài liệu Phase phát triển dự án
+# AG Quota Manager — Phase Roadmap
 
-## 1. Tổng quan dự án
+## 1. Mục tiêu của tài liệu
 
-**AG Quota Manager** là một ứng dụng **local web dashboard** dùng để quản lý và theo dõi quota của nhiều Google account đang sử dụng với Antigravity IDE.
+File `Phase.md` mô tả lộ trình phát triển dự án **AG Quota Manager** theo từng phase.
 
-Dự án lấy phong cách local dashboard giống 9Router ở các phần:
+Dự án là một **local-first web dashboard** dùng để quản lý và theo dõi quota của nhiều Google account đang sử dụng với Antigravity IDE.
+
+Dự án lấy cảm hứng từ phong cách local dashboard của 9Router ở các phần:
 
 ```text
 Local web dashboard
@@ -17,9 +19,9 @@ Import/export config
 Dashboard chạy bằng localhost
 ```
 
-Tuy nhiên, dự án **không phải AI router**.
+Nhưng dự án **không phải AI router**.
 
-Dự án không làm:
+Dự án không được làm:
 
 ```text
 Không proxy AI request
@@ -29,213 +31,56 @@ Không bypass quota
 Không lưu Google password
 Không lưu Google cookie
 Không lưu OAuth refresh token
+Không lưu access token dài hạn
+Không lưu raw browser session
 Không gửi prompt thay người dùng
 ```
 
-Mục tiêu chính của dự án là:
-
-```text
-Tự kiểm tra quota của nhiều Google account
-Hiển thị account nào còn quota
-Hiển thị account nào gần hết quota
-Hiển thị account nào hết quota
-Hiển thị account nào lỗi session hoặc cần login lại
-Gợi ý account nên dùng tiếp
-Lưu lịch sử quota
-Cảnh báo account tụt quota nhanh
-Có thể xem nhanh quota trong Antigravity IDE qua extension
-```
-
-Điểm quan trọng:
+Nguyên tắc chính:
 
 ```text
 Auto quota reader + Refresh All là chức năng chính.
-Manual update chỉ là fallback khi auto reader lỗi.
+Manual update chỉ là fallback.
+Mock reader chỉ dùng để test UI/API flow.
 ```
 
 ---
 
-# 2. Kiến trúc tổng thể
+# 2. Tổng quan phase
 
 ```text
-AG Quota Manager
-├── Local Web Dashboard
-│   ├── Dashboard Overview
-│   ├── Account Management
-│   ├── Chrome Profile Mapping
-│   ├── Quota Status
-│   ├── Quota History
-│   ├── Recommendation
-│   ├── Analytics
-│   ├── Settings
-│   └── Import / Export
-│
-├── Local API Server
-│   ├── Accounts API
-│   ├── Quota API
-│   ├── Refresh API
-│   ├── History API
-│   ├── Recommendation API
-│   ├── Settings API
-│   └── Health API
-│
-├── SQLite Database
-│   ├── accounts
-│   ├── quota_status
-│   ├── quota_history
-│   ├── settings
-│   └── audit_logs
-│
-├── Quota Reader
-│   ├── Refresh one account
-│   ├── Refresh all accounts
-│   ├── Detect quota status
-│   ├── Detect session/account error
-│   └── Save result to SQLite
-│
-└── Optional Antigravity IDE Extension
-    ├── Status Bar
-    ├── Quick Quota View
-    ├── Recommended Account
-    ├── Refresh Data
-    └── Open Dashboard Command
-```
-
-Luồng hoạt động chính:
-
-```text
-User mở dashboard localhost
-→ Dashboard gọi Local API
-→ Local API gọi Quota Reader
-→ Quota Reader kiểm tra quota từng account
-→ Kết quả lưu vào SQLite
-→ Dashboard hiển thị quota/status/history/recommendation
-```
-
-Luồng extension:
-
-```text
-User đang code trong Antigravity IDE
-→ Extension gọi Local API
-→ Extension hiển thị quota nhanh
-→ Extension gợi ý account nên dùng
-```
-
----
-
-# 3. Công nghệ đề xuất
-
-## Core stack
-
-```text
-Next.js
-React
-TypeScript
-SQLite
-Prisma hoặc Drizzle
-Local API Routes
-Tailwind CSS hoặc CSS Modules
-Node.js runtime
-```
-
-## App chạy local
-
-```text
-http://localhost:3028
-```
-
-Hoặc:
-
-```text
-http://127.0.0.1:3028
-```
-
-App chỉ nên bind local:
-
-```text
-127.0.0.1
-localhost
-```
-
-Không mặc định bind:
-
-```text
-0.0.0.0
-```
-
----
-
-# 4. Nguyên tắc bảo mật bắt buộc
-
-Dự án không được lưu:
-
-```text
-Google password
-Google cookie
-OAuth refresh token
-Access token dài hạn
-2FA code
-Recovery code
-Raw browser session
-Antigravity secret token
-```
-
-Dự án không được có:
-
-```text
-/v1/chat/completions
-/v1/models
-/proxy
-/rotate
-/account-switch
-AI request forwarding
-Auto account rotation
-```
-
-Dự án chỉ được làm:
-
-```text
-Đọc quota/status nếu có session hợp lệ
-Lưu account metadata
-Lưu quota status
-Lưu quota history
-Gợi ý account nên dùng
-Hiển thị dashboard local
-Hiển thị quick view trong extension
-```
-
----
-
-# 5. Tổng quan các phase phát triển
-
-```text
-Phase 0  → Scope & Architecture Lock
-Phase 1  → Next.js Local Dashboard Foundation
-Phase 2  → SQLite Database & Local API
-Phase 3  → Account & Chrome Profile Mapping
-Phase 4  → Quota Reader Research & Prototype
-Phase 5  → Refresh One Account
-Phase 6  → Refresh All Accounts
-Phase 7  → Auto Refresh Scheduler
-Phase 8  → Status Dashboard
-Phase 9  → Recommendation Engine
-Phase 10 → Quota History & Analytics
-Phase 11 → Manual Override / Fallback
-Phase 12 → Settings Page
-Phase 13 → Import / Export Config
-Phase 14 → Security Hardening
-Phase 15 → Optional Antigravity IDE Extension
-Phase 16 → Packaging & Release
-Phase 17 → Maintenance
+Phase 0   → Scope & Architecture Lock
+Phase 0.5 → Quota Reader Feasibility Spike
+Phase 1   → Next.js Local Dashboard Foundation
+Phase 2   → SQLite Database & Prisma
+Phase 3   → Local API Routes
+Phase 4   → Account & Chrome Profile Mapping
+Phase 5   → Quota Reader System
+Phase 6   → Refresh One Account
+Phase 7   → Refresh All Accounts
+Phase 8   → Auto Refresh Scheduler
+Phase 9   → Status Dashboard
+Phase 10  → Recommendation Engine
+Phase 11  → Quota History & Analytics
+Phase 12  → Manual Override / Fallback
+Phase 13  → Settings Page
+Phase 14  → Import / Export Config
+Phase 15  → Security Hardening
+Phase 16  → Optional Antigravity IDE Extension
+Phase 17  → Packaging & Release
+Phase 18  → Maintenance
 ```
 
 Thứ tự ưu tiên:
 
 ```text
-Dashboard local trước
-→ SQLite + Local API
+Local dashboard foundation
+→ SQLite + Prisma
+→ Local API routes
 → Account/Profile mapping
-→ Quota Reader
+→ Quota reader interface
+→ Mock reader
+→ Real reader feasibility spike
 → Refresh One
 → Refresh All
 → Auto Refresh
@@ -246,7 +91,7 @@ Dashboard local trước
 → Settings
 → Import/Export
 → Security
-→ Extension
+→ Optional Extension
 ```
 
 ---
@@ -255,42 +100,99 @@ Dashboard local trước
 
 ## Mục tiêu
 
-Chốt rõ dự án là một **local web dashboard phong cách 9Router**, nhưng chỉ dùng để quản lý quota account.
+Chốt rõ phạm vi, kiến trúc, công nghệ và nguyên tắc bảo mật của dự án trước khi code.
 
 ## Việc cần làm
 
 ```text
 Chốt tên dự án: AG Quota Manager
 Chốt mô tả dự án
-Chốt kiến trúc Next.js + SQLite + Local API
-Chốt port local mặc định
-Chốt SQLite là nguồn dữ liệu chính
-Chốt Auto Quota Reader là tính năng chính
+Chốt kiến trúc: Next.js + React + Prisma + SQLite
+Chốt app chạy local bằng localhost
+Chốt SQLite là source of truth
+Chốt Refresh All là core feature
 Chốt Manual Override chỉ là fallback
 Chốt không proxy
 Chốt không auto-rotate account
 Chốt không lưu secret
 ```
 
-## Kết quả cần có
+## Deliverables
 
 ```text
 README.md
-PROJECT_REQUIREMENTS.md
-ARCHITECTURE.md
-ROADMAP.md
-SECURITY.md
+Plan.md
+Phase.md
+.agents/instructions.md
+.agents/coding-rules.md
+.agents/safety-rules.md
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
-Tài liệu ghi rõ app chạy local.
-Tài liệu ghi rõ app không proxy.
-Tài liệu ghi rõ app không auto-rotate.
-Tài liệu ghi rõ app không lưu secret.
+Repo có README ngắn gọn.
+Repo có Plan.md là specification chính.
+Repo có Phase.md là roadmap.
+Repo có rule cho AI agent.
+Tài liệu ghi rõ app không phải AI router.
+Tài liệu ghi rõ app không lưu password/cookie/OAuth token.
 Tài liệu ghi rõ Refresh All là tính năng chính.
-Tài liệu ghi rõ manual update chỉ là fallback.
+```
+
+---
+
+# Phase 0.5 — Quota Reader Feasibility Spike
+
+## Mục tiêu
+
+Kiểm tra xem có thể đọc quota thật của Antigravity/local account một cách an toàn hay không.
+
+Đây là phase rất quan trọng. Không được coi dự án hoàn thành nếu chỉ có mock reader.
+
+## Việc cần làm
+
+```text
+Tạo quota-reader interface.
+Tạo mock-reader để test UI/API flow.
+Nghiên cứu nguồn quota thật của Antigravity.
+Kiểm tra Antigravity có local state/local endpoint/local file nào chứa quota không.
+Kiểm tra Chrome Profile mapping có giúp đọc quota an toàn không.
+Tạo prototype refresh-one cho 1 account nếu khả thi.
+Nếu chưa khả thi, viết report rõ ràng.
+```
+
+## Không được làm
+
+```text
+Không lưu cookie.
+Không lưu password.
+Không lưu OAuth refresh token.
+Không lưu access token dài hạn.
+Không đọc raw browser session để lưu vào DB.
+Không tạo proxy endpoint.
+Không route request qua app.
+Không auto-rotate account.
+```
+
+## Deliverables
+
+```text
+lib/quota-reader/types.ts
+lib/quota-reader/mock-reader.ts
+lib/quota-reader/antigravity-reader.ts
+lib/quota-reader/errors.ts
+docs/QUOTA_READER_FEASIBILITY.md
+```
+
+## Điều kiện hoàn thành
+
+```text
+Có quota reader interface.
+Có mock reader để test.
+Có real reader skeleton.
+Có report khả thi/không khả thi.
+Nếu chưa đọc được quota thật, phải ghi rõ mock reader chỉ là demo/test.
 ```
 
 ---
@@ -301,255 +203,237 @@ Tài liệu ghi rõ manual update chỉ là fallback.
 
 Tạo nền tảng web local dashboard.
 
-## Tech stack
+## Công nghệ
 
 ```text
 Next.js
 React
 TypeScript
-Tailwind CSS hoặc CSS Modules
+Tailwind CSS
 Node.js runtime
 ```
 
-## Cấu trúc repo đề xuất
+## Việc cần làm
 
 ```text
-ag-quota-manager/
-├── app/
-│   ├── dashboard/
-│   ├── accounts/
-│   ├── history/
-│   ├── analytics/
-│   ├── settings/
-│   └── api/
-│
-├── components/
-│   ├── layout/
-│   ├── dashboard/
-│   ├── accounts/
-│   ├── quota/
-│   ├── history/
-│   ├── analytics/
-│   └── ui/
-│
-├── lib/
-│   ├── db/
-│   ├── services/
-│   ├── quota-reader/
-│   ├── recommendation/
-│   ├── validators/
-│   └── utils/
-│
-├── prisma/ hoặc drizzle/
-├── docs/
-├── README.md
-├── package.json
-└── .env.example
+Tạo Next.js project.
+Cấu hình TypeScript.
+Cấu hình Tailwind CSS.
+Tạo layout chính.
+Tạo sidebar.
+Tạo topbar.
+Tạo dashboard page trống.
+Tạo accounts page trống.
+Tạo history page trống.
+Tạo analytics page trống.
+Tạo settings page trống.
 ```
 
-## Script đề xuất
+## Cấu trúc ban đầu
 
-```bash
-npm run dev
-npm run build
-npm run start
-npm run lint
-npm run db:migrate
-npm run db:studio
+```text
+app/
+├── dashboard/
+├── accounts/
+├── history/
+├── analytics/
+├── settings/
+└── api/
+
+components/
+├── layout/
+├── dashboard/
+├── accounts/
+├── quota/
+├── history/
+├── analytics/
+└── ui/
+
+lib/
+├── db/
+├── services/
+├── quota-reader/
+├── recommendation/
+├── validators/
+└── utils/
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
-Next.js app chạy được local.
-Có sidebar/topbar.
-Có dashboard page trống.
-Có accounts page trống.
-Có history page trống.
-Có settings page trống.
-Có layout dashboard giống admin tool.
+App chạy được bằng npm run dev.
+Dashboard mở được trên localhost.
+Sidebar/topbar hoạt động.
+Navigation giữa các page hoạt động.
+Chưa cần có logic quota thật.
 ```
 
 ---
 
-# Phase 2 — SQLite Database & Local API
+# Phase 2 — SQLite Database & Prisma
 
 ## Mục tiêu
 
-Tạo database local và API routes để dashboard dùng.
+Tạo local database để lưu account, quota status, quota history, settings và audit logs.
 
-## Database
-
-Sử dụng SQLite.
-
-## ORM
-
-Có thể chọn:
+## Công nghệ
 
 ```text
-Prisma nếu muốn phổ biến, dễ cho AI agent code.
-Drizzle nếu muốn nhẹ hơn.
+SQLite
+Prisma
 ```
 
-## Bảng accounts
+## Việc cần làm
 
 ```text
-id
-nickname
-email_hint
-plan
-chrome_profile_name
-chrome_profile_path
-browser_type
-is_shared
-shared_with
-priority
-is_active
-note
-created_at
-updated_at
+Cài Prisma.
+Cấu hình SQLite.
+Tạo prisma/schema.prisma.
+Tạo model Account.
+Tạo model QuotaStatus.
+Tạo model QuotaHistory.
+Tạo model Setting.
+Tạo model AuditLog.
+Chạy migration đầu tiên.
+Tạo Prisma client helper.
+Tạo seed data demo.
 ```
 
-## Bảng quota_status
+## Database models
 
 ```text
-id
-account_id
-quota_percent
-status
-reset_estimate
-last_checked_at
-source
-error_message
-created_at
-updated_at
+Account
+QuotaStatus
+QuotaHistory
+Setting
+AuditLog
 ```
 
-## Bảng quota_history
+## Lưu ý bảo mật
+
+Schema không được có field:
 
 ```text
-id
-account_id
-quota_percent
-status
-reset_estimate
-source
-checked_at
-error_message
-note
-created_at
+password
+cookie
+oauthToken
+refreshToken
+accessToken
+rawSession
+secretToken
 ```
 
-## Bảng settings
+## Điều kiện hoàn thành
 
 ```text
-id
-key
-value
-updated_at
+SQLite database hoạt động.
+Prisma migration chạy được.
+Seed data chạy được.
+Không có secret fields trong schema.
 ```
 
-## Bảng audit_logs
+---
 
-```text
-id
-action
-entity_type
-entity_id
-metadata
-created_at
-```
+# Phase 3 — Local API Routes
+
+## Mục tiêu
+
+Tạo API routes để dashboard và extension sau này dùng chung.
 
 ## API cần có
 
-### Health
-
 ```text
-GET /api/health
-```
+GET    /api/health
 
-### Accounts
-
-```text
 GET    /api/accounts
 POST   /api/accounts
 GET    /api/accounts/:id
 PUT    /api/accounts/:id
 DELETE /api/accounts/:id
+
+GET    /api/quota/status
+POST   /api/quota/refresh-one
+POST   /api/quota/refresh-all
+POST   /api/quota/manual-override
+
+GET    /api/history
+GET    /api/history/:accountId
+
+GET    /api/recommendation
+
+GET    /api/settings
+PUT    /api/settings
+
+GET    /api/config/export
+POST   /api/config/import
 ```
 
-### Quota
+## Việc cần làm
 
 ```text
-GET  /api/quota/status
-POST /api/quota/refresh-one
-POST /api/quota/refresh-all
-POST /api/quota/manual-override
-```
-
-### History
-
-```text
-GET /api/history
-GET /api/history/:accountId
-```
-
-### Recommendation
-
-```text
-GET /api/recommendation
-```
-
-### Settings
-
-```text
-GET /api/settings
-PUT /api/settings
-```
-
-### Import / Export
-
-```text
-GET  /api/config/export
-POST /api/config/import
+Tạo health API.
+Tạo account CRUD API.
+Tạo quota status API.
+Tạo refresh-one API skeleton.
+Tạo refresh-all API skeleton.
+Tạo manual-override API.
+Tạo history API.
+Tạo recommendation API.
+Tạo settings API.
+Tạo export/import API.
+Chuẩn hóa response JSON.
+Chuẩn hóa error response.
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
-SQLite hoạt động.
-Migration chạy được.
-API health hoạt động.
-API accounts CRUD hoạt động.
-API quota status hoạt động.
-Không có field password/cookie/token.
+API trả JSON đúng format.
+API đọc/ghi SQLite được.
 Không có proxy endpoint.
+Không có /v1/chat/completions.
+Không có /v1/models.
+Không có /proxy.
+Không có /rotate.
 ```
 
 ---
 
-# Phase 3 — Account & Chrome Profile Mapping
+# Phase 4 — Account & Chrome Profile Mapping
 
 ## Mục tiêu
 
-Cho phép người dùng thêm account và map account với Chrome Profile riêng.
+Cho phép người dùng thêm account và map từng account với Chrome Profile riêng.
 
-Đây là nền tảng để quota reader biết account nào cần kiểm tra.
-
-## Form account
+## Chức năng
 
 ```text
-Nickname
-Email hint
-Plan
-Chrome profile name
-Chrome profile path
-Browser type
-Shared status
-Shared with
-Priority
-Note
-Active/Inactive
+Add account
+Edit account
+Delete account
+Enable/disable account
+Set Chrome profile name
+Set Chrome profile path
+Set browser type
+Mark shared account
+Set priority
+Set note
+```
+
+## Account fields
+
+```text
+nickname
+emailHint
+plan
+chromeProfileName
+chromeProfilePath
+browserType
+isShared
+sharedWith
+priority
+isActive
+note
 ```
 
 ## Ví dụ mapping
@@ -565,87 +449,49 @@ AG-07 → Chrome Profile AG-07
 AG-08 → Chrome Profile AG-08
 ```
 
-## Account table
-
-```text
-Account
-Email hint
-Plan
-Chrome Profile
-Shared
-Priority
-Quota
-Status
-Last Checked
-Error
-Actions
-```
-
 ## Điều kiện hoàn thành
 
 ```text
-Thêm account được.
-Sửa account được.
-Xóa account được.
-Map Chrome Profile được.
-Account lưu vào SQLite.
+User có thể tạo 8 account.
+Mỗi account có thể map với Chrome Profile.
+Data lưu vào SQLite.
 Dashboard hiển thị danh sách account.
 Không lưu secret.
 ```
 
 ---
 
-# Phase 4 — Quota Reader Research & Prototype
+# Phase 5 — Quota Reader System
 
 ## Mục tiêu
 
-Nghiên cứu và tạo module thử nghiệm để đọc quota thật từ Antigravity/local session/account profile.
+Tạo hệ thống reader để Refresh One và Refresh All có thể gọi chung một interface.
 
-Đây là phase quan trọng nhất về kỹ thuật.
-
-## Module đề xuất
+## Reader types
 
 ```text
-lib/quota-reader/
-├── index.ts
-├── types.ts
-├── profile-detector.ts
-├── antigravity-reader.ts
-├── errors.ts
-└── mock-reader.ts
+mock-reader
+auto-reader
+manual-override
 ```
 
-## Interface đề xuất
+## Interface chuẩn
 
 ```ts
-type QuotaRefreshResult = {
+export type QuotaRefreshResult = {
   accountId: string;
   success: boolean;
   quotaPercent?: number;
-  status?: "green" | "yellow" | "red" | "locked" | "unknown" | "error";
+  status: "green" | "yellow" | "red" | "locked" | "unknown" | "error";
   resetEstimate?: string;
   checkedAt: string;
-  source: "auto-reader" | "mock-reader";
+  source: "auto-reader" | "mock-reader" | "manual-override";
+  errorCode?: string;
   errorMessage?: string;
 };
 ```
 
-## Yêu cầu
-
-Quota reader chỉ được:
-
-```text
-Đọc quota nếu có session hợp lệ.
-Trả quota percent/status/reset estimate.
-Trả lỗi nếu không đọc được.
-Không lưu password.
-Không lưu cookie.
-Không lưu OAuth token.
-Không proxy request.
-Không auto-rotate account.
-```
-
-## Error cần chuẩn hóa
+## Error codes
 
 ```text
 PROFILE_NOT_FOUND
@@ -656,153 +502,179 @@ TIMEOUT
 UNKNOWN_ERROR
 ```
 
+## Việc cần làm
+
+```text
+Implement mock-reader.
+Implement real-reader skeleton.
+Implement profile-detector skeleton.
+Implement error normalizer.
+Implement result normalizer.
+Implement status threshold logic.
+```
+
 ## Điều kiện hoàn thành
 
 ```text
-Có quota-reader interface.
-Có mock-reader để test UI.
-Có prototype reader nếu tìm được nguồn quota thật.
-Reader trả kết quả chuẩn.
+Mock reader chạy được.
+Real reader có interface rõ ràng.
+Refresh result được normalize.
 Reader lỗi không làm crash app.
-Không lưu secret.
+Mock reader không được đánh dấu là production.
 ```
 
 ---
 
-# Phase 5 — Refresh One Account
+# Phase 6 — Refresh One Account
 
 ## Mục tiêu
 
-Cho phép refresh quota từng account.
+Cho phép refresh quota cho từng account.
 
 ## Flow
 
 ```text
-User bấm Refresh AG-01
+User bấm Refresh One
 → API nhận accountId
-→ Load account + Chrome Profile mapping
+→ Load account từ SQLite
+→ Load Chrome Profile mapping
 → Gọi quota-reader
-→ Nếu thành công: update quota_status
-→ Ghi quota_history
+→ Nếu success: update quota_status
+→ Luôn ghi quota_history
 → Ghi audit_log
-→ Trả kết quả về dashboard
+→ Trả result về UI
 ```
 
-## Nếu lỗi
+## Rule quan trọng khi lỗi
+
+Nếu refresh lỗi:
 
 ```text
 Không xóa quota cũ.
-Không ghi đè dữ liệu tốt bằng null.
-Ghi error_message.
-Ghi history source = auto-reader với error.
-Hiển thị lỗi ở account row.
+Không set quotaPercent = null nếu trước đó có data tốt.
+Không ghi đè dữ liệu tốt bằng error rỗng.
+Chỉ update errorCode, errorMessage, lastErrorAt.
+Vẫn ghi history record cho lần refresh lỗi.
+Dashboard hiển thị quota cũ kèm warning.
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
-Refresh từng account được.
-Kết quả lưu vào SQLite.
-History được ghi.
-Error được hiển thị.
-Một account lỗi không crash app.
-Manual fallback vẫn có thể dùng sau này.
+Refresh One hoạt động.
+Kết quả thành công lưu vào quota_status.
+Mọi lần refresh lưu vào quota_history.
+Error được hiển thị rõ.
+Data tốt không bị mất khi refresh lỗi.
 ```
 
 ---
 
-# Phase 6 — Refresh All Accounts
+# Phase 7 — Refresh All Accounts
 
 ## Mục tiêu
 
-Cho phép kiểm tra quota của toàn bộ account chỉ bằng một nút.
+Cho phép refresh quota của toàn bộ active accounts bằng một nút.
 
-Đây là tính năng cốt lõi giúp dự án có giá trị thật.
+Đây là core feature của dự án.
 
 ## Flow
 
 ```text
 User bấm Refresh All
 → API lấy danh sách account active
-→ Check từng account một
-→ Account nào thành công thì update quota_status
-→ Account nào lỗi thì ghi error riêng
-→ Không dừng toàn bộ nếu một account lỗi
+→ Check từng account theo thứ tự
+→ Account thành công thì update quota_status
+→ Account lỗi thì ghi lỗi riêng
+→ Một account lỗi không dừng toàn bộ process
 → Trả summary về dashboard
 ```
 
-## Summary kết quả
+## Summary cần trả
 
 ```text
-Total accounts
-Success count
-Error count
-Skipped count
-Started at
-Finished at
-Duration
+total
+successCount
+errorCount
+skippedCount
+startedAt
+finishedAt
+durationMs
+results
+```
+
+## UI cần có
+
+```text
+Refresh All button
+Loading state
+Progress state
+Success state
+Error summary
+Per-account result
+Last refresh time
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
 Refresh All hoạt động.
-Check được nhiều account theo thứ tự.
-Một account lỗi không dừng process.
-Có progress/loading state.
-Có summary sau refresh.
+Check được nhiều account.
+Một account lỗi không làm dừng toàn bộ.
+Có summary kết quả.
 Có history cho từng account.
 Có error riêng cho từng account.
 ```
 
 ---
 
-# Phase 7 — Auto Refresh Scheduler
+# Phase 8 — Auto Refresh Scheduler
 
 ## Mục tiêu
 
-Tự động refresh quota theo chu kỳ.
+Cho phép tự động refresh quota theo chu kỳ an toàn.
 
 ## Settings
 
 ```text
-Enable auto refresh
-Refresh interval
-Refresh only active accounts
-Skip accounts with recent error optional
+autoRefreshEnabled
+autoRefreshIntervalMinutes
+refreshOnlyActiveAccounts
+skipRecentErrorAccounts optional
 ```
 
-## Interval mặc định
+## Default
 
 ```text
-5–10 phút/lần
+Auto refresh: off by default
+Interval: 10 minutes
+Minimum interval: 5 minutes
 ```
 
-Không nên refresh quá nhanh.
-
-## Flow
+## Việc cần làm
 
 ```text
-Scheduler chạy
-→ Gọi Refresh All
-→ Cập nhật dashboard
-→ Ghi history
-→ Ghi error nếu có
+Tạo setting bật/tắt auto refresh.
+Tạo setting interval.
+Implement scheduler.
+Prevent refresh quá dày.
+Hiển thị last auto refresh.
+Hiển thị next refresh.
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
 Auto refresh bật/tắt được.
-Interval chỉnh được trong settings.
-Auto refresh không chạy quá dày.
+Interval chỉnh được.
+Không refresh quá nhanh.
 Auto refresh lỗi không crash app.
-Dashboard hiển thị last auto refresh.
+Dashboard cập nhật sau auto refresh.
 ```
 
 ---
 
-# Phase 8 — Status Dashboard
+# Phase 9 — Status Dashboard
 
 ## Mục tiêu
 
@@ -822,17 +694,18 @@ Recommended account
 Last refresh time
 ```
 
-## Account table
+## Account table columns
 
 ```text
 Account
+Email hint
 Profile
 Plan
 Quota
 Status
 Shared
-Last Checked
-Reset
+Last checked
+Reset estimate
 Error
 Actions
 ```
@@ -840,27 +713,29 @@ Actions
 ## Actions
 
 ```text
-Refresh one
-View history
-Manual override
-Edit account
-Disable account
+Refresh One
+View History
+Manual Override
+Edit Account
+Disable Account
+Delete Account
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
-Dashboard hiển thị status tổng quan.
+Dashboard nhìn được toàn bộ quota nhanh.
 Account table rõ ràng.
 Quota progress bar hoạt động.
 Status badge hoạt động.
 Error badge hoạt động.
-Last refresh hiển thị đúng.
+Stale badge hoạt động.
+Refresh All button nổi bật.
 ```
 
 ---
 
-# Phase 9 — Recommendation Engine
+# Phase 10 — Recommendation Engine
 
 ## Mục tiêu
 
@@ -879,35 +754,35 @@ Unknown/Error → không dùng
 Stale data → cần refresh trước khi dùng
 ```
 
-## Output
+## Output cần có
 
 ```text
-Recommended account
-Reason
-Warning
-Alternative accounts
-Last checked age
+recommended account
+reason
+warnings
+alternative accounts
+last checked age
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
-Có API /api/recommendation.
+Recommendation API hoạt động.
 Dashboard hiển thị recommended account.
-Không chọn account red/locked/error.
-Không chọn account stale nếu có account fresh hơn.
+Không recommend account red/locked/error/unknown.
+Ưu tiên account fresh và quota cao.
 Có reason rõ ràng.
 ```
 
 ---
 
-# Phase 10 — Quota History & Analytics
+# Phase 11 — Quota History & Analytics
 
 ## Mục tiêu
 
-Lưu lịch sử quota và phát hiện usage bất thường.
+Lưu lịch sử quota và phát hiện dấu hiệu bất thường.
 
-## History page
+## History table
 
 ```text
 Time
@@ -920,7 +795,7 @@ Error
 Note
 ```
 
-## Filter
+## Filters
 
 ```text
 All accounts
@@ -953,27 +828,28 @@ Fast drain warning
 Account became red
 Session expired
 Data stale
+Repeated refresh error
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
-History lưu đầy đủ.
-History filter được.
-Có analytics cơ bản.
-Có cảnh báo quota drop.
+History page hoạt động.
+Filter hoạt động.
+Quota drop detection cơ bản hoạt động.
+Có cảnh báo account tụt quota nhanh.
 Có cảnh báo account cần login lại.
 ```
 
 ---
 
-# Phase 11 — Manual Override / Fallback
+# Phase 12 — Manual Override / Fallback
 
 ## Mục tiêu
 
 Cho phép người dùng nhập/sửa quota thủ công khi auto reader lỗi.
 
-Manual không phải tính năng chính, chỉ là fallback.
+Manual không phải tính năng chính.
 
 ## Khi dùng manual
 
@@ -984,7 +860,7 @@ Account bị logout.
 Người dùng muốn override tạm.
 ```
 
-## Form manual override
+## Form
 
 ```text
 Account
@@ -1006,17 +882,17 @@ manual-override
 ```text
 Manual override hoạt động.
 Manual override ghi history.
-Manual override không thay thế auto reader.
 Dashboard phân biệt rõ source auto-reader và manual-override.
+UI ghi rõ manual là fallback.
 ```
 
 ---
 
-# Phase 12 — Settings Page
+# Phase 13 — Settings Page
 
 ## Mục tiêu
 
-Cấu hình dashboard và refresh behavior.
+Cho phép người dùng cấu hình app.
 
 ## Settings cần có
 
@@ -1024,29 +900,27 @@ Cấu hình dashboard và refresh behavior.
 Green threshold
 Red threshold
 Stale data threshold
-Refresh interval
 Auto refresh on/off
-Default dashboard port
-Theme
-Recommendation strategy
+Refresh interval
 Confirm before delete
 Confirm before import overwrite
 Audit log on/off
+Theme optional
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
-Settings lưu SQLite.
-Threshold thay đổi được.
-Refresh interval chỉnh được.
+Settings lưu vào SQLite.
 Dashboard dùng settings mới.
+Threshold thay đổi được.
+Auto refresh interval thay đổi được.
 Có confirm cho thao tác nguy hiểm.
 ```
 
 ---
 
-# Phase 13 — Import / Export Config
+# Phase 14 — Import / Export Config
 
 ## Mục tiêu
 
@@ -1079,12 +953,12 @@ recovery code
 ## Import yêu cầu
 
 ```text
-Validate schema
-Check app version
-Preview before import
-Confirm before overwrite
-Reject secret-like fields
-Write audit log
+Validate schema.
+Check app version.
+Preview before import.
+Confirm before overwrite.
+Reject secret-like fields.
+Write audit log.
 ```
 
 ## Điều kiện hoàn thành
@@ -1100,11 +974,11 @@ Không export/import secret.
 
 ---
 
-# Phase 14 — Security Hardening
+# Phase 15 — Security Hardening
 
 ## Mục tiêu
 
-Đảm bảo app an toàn khi chạy lâu dài.
+Đảm bảo app an toàn khi chạy lâu dài trên máy cá nhân.
 
 ## Local-only
 
@@ -1122,6 +996,7 @@ Không lưu cookie.
 Không lưu OAuth refresh token.
 Không lưu access token.
 Không lưu raw session.
+Không lưu Antigravity secret token.
 ```
 
 ## No proxy
@@ -1167,15 +1042,13 @@ Có confirm cho thao tác nguy hiểm.
 
 ---
 
-# Phase 15 — Optional Antigravity IDE Extension
+# Phase 16 — Optional Antigravity IDE Extension
 
 ## Mục tiêu
 
 Tạo extension để xem quota nhanh trong Antigravity IDE.
 
 Extension không thay thế web dashboard.
-
-Extension dùng Local API để đọc dữ liệu.
 
 ## Extension features
 
@@ -1185,16 +1058,25 @@ Sidebar account list
 Recommended account
 Refresh data command
 Open dashboard command
-Show error/offline status
+Offline status if local API is down
 ```
 
-## Status bar ví dụ
+## Extension API calls
+
+```text
+GET  /api/health
+GET  /api/quota/status
+GET  /api/recommendation
+POST /api/quota/refresh-all
+```
+
+## Status bar example
 
 ```text
 AG: AG-01 · 82% · Green
 ```
 
-## Sidebar ví dụ
+## Sidebar example
 
 ```text
 Recommended
@@ -1206,64 +1088,37 @@ Accounts
 └── AG-03 · Error · Session expired
 ```
 
-## Extension API calls
-
-```text
-GET /api/health
-GET /api/quota/status
-GET /api/recommendation
-POST /api/quota/refresh-all
-```
-
 ## Điều kiện hoàn thành
 
 ```text
 Extension build được.
 Extension cài được vào Antigravity IDE.
-Status bar hiển thị quota.
-Sidebar hiển thị account list.
 Extension gọi Local API được.
-Nếu server offline thì không crash.
+Nếu local API offline thì extension không crash.
 Extension không lưu secret.
+Extension không tự proxy request.
 ```
 
 ---
 
-# Phase 16 — Packaging & Release
+# Phase 17 — Packaging & Release
 
 ## Mục tiêu
 
 Đóng gói để người dùng dễ chạy.
 
-## Web local app
-
-Dev:
+## Dev command
 
 ```bash
 npm install
 npm run dev
 ```
 
-Production:
+## Production command
 
 ```bash
 npm run build
 npm start
-```
-
-## Future desktop wrapper
-
-Có thể đóng gói sau bằng:
-
-```text
-Tauri
-Electron
-```
-
-## Extension package nếu có
-
-```text
-ag-quota-manager-extension.vsix
 ```
 
 ## Tài liệu cần có
@@ -1273,17 +1128,23 @@ README.md
 INSTALL.md
 USAGE.md
 SECURITY.md
-EXTENSION.md
-ROADMAP.md
 CHANGELOG.md
+docs/ARCHITECTURE.md
+docs/QUOTA_READER_FEASIBILITY.md
+```
+
+## Optional desktop wrapper
+
+```text
+Tauri
+Electron
 ```
 
 ## Điều kiện hoàn thành
 
 ```text
-Web app chạy được local.
-Có hướng dẫn cài đặt.
-Có hướng dẫn refresh quota.
+User có thể install và chạy app local.
+Docs rõ ràng.
 Có hướng dẫn backup/export.
 Có hướng dẫn security.
 Nếu có extension thì đóng gói .vsix được.
@@ -1291,7 +1152,7 @@ Nếu có extension thì đóng gói .vsix được.
 
 ---
 
-# Phase 17 — Maintenance
+# Phase 18 — Maintenance
 
 ## Mục tiêu
 
@@ -1328,24 +1189,27 @@ Extension is optional.
 
 ---
 
-# 6. MVP đúng nên đạt
+# MVP Checklist
 
-MVP có giá trị thật nên gồm:
+MVP phải có:
 
 ```text
 Next.js local dashboard
-SQLite database
+SQLite + Prisma
 Local API routes
 Account/Profile mapping
-Quota Reader prototype
-Refresh One account
-Refresh All accounts
+Quota reader interface
+Mock reader
+Real reader feasibility spike
+Refresh One
+Refresh All
 Quota status table
 Error handling
 Recommendation
 Quota history
 Manual fallback
-Settings cơ bản
+Settings basics
+Export JSON
 Security notes
 No secret storage
 No proxy
@@ -1360,86 +1224,112 @@ Desktop packaging
 Cloud sync
 Multi-user server
 Advanced analytics
+Perfect real quota reader if feasibility is not yet proven
 ```
 
----
-
-# 7. Bản hoàn chỉnh nên có
-
-Bản hoàn chỉnh nên gồm:
+Quan trọng:
 
 ```text
-Local web dashboard phong cách 9Router
-SQLite/local storage
-Local API server
-Settings page
-Status dashboard
-Provider/account table
-Import/export config
-Auto quota reader
-Refresh all accounts
-Auto refresh scheduler
-Quota history
-Analytics
-Recommendation engine
-Manual fallback
-Security hardening
-Optional Antigravity extension
-Packaging rõ ràng
+Mock reader alone is not considered full completion.
+Refresh All using only mock-reader is not considered production-ready.
+Real reader feasibility must be documented.
 ```
 
 ---
 
-# 8. Thứ tự task cụ thể cho AI Agent Code
+# Task Order for AI Agent
 
 ```text
-1. Tạo Next.js project.
-2. Cấu hình TypeScript.
-3. Cấu hình SQLite + ORM.
-4. Tạo database schema.
-5. Tạo API /api/health.
-6. Tạo API accounts CRUD.
-7. Tạo account/profile mapping UI.
-8. Tạo quota-reader interface.
-9. Tạo mock-reader để test flow.
-10. Tạo API refresh-one.
-11. Tạo API refresh-all.
-12. Tạo quota status table.
-13. Tạo refresh one button.
-14. Tạo refresh all button.
-15. Tạo loading/success/error UI.
-16. Tạo history table.
-17. Tạo recommendation engine.
-18. Tạo dashboard cards.
-19. Tạo auto refresh scheduler.
-20. Tạo manual override fallback.
-21. Tạo settings page.
-22. Tạo import/export config.
-23. Tạo audit logs.
-24. Thêm security checks.
-25. Viết README/INSTALL/SECURITY.
-26. Sau đó mới làm extension.
-27. Sau cùng cải thiện quota reader thật.
+1. Read README.md.
+2. Read Plan.md.
+3. Read Phase.md.
+4. Read .agents/* rules.
+5. Create Next.js project.
+6. Configure TypeScript.
+7. Configure Tailwind CSS.
+8. Configure Prisma + SQLite.
+9. Create Prisma schema.
+10. Run migration.
+11. Create Prisma client helper.
+12. Create shared enums/types.
+13. Create /api/health.
+14. Create account CRUD APIs.
+15. Create quota status API.
+16. Create quota-reader interface.
+17. Create mock-reader.
+18. Create real-reader skeleton.
+19. Create refresh-one API.
+20. Create refresh-all API.
+21. Implement no-overwrite-good-data rule.
+22. Create quota history API.
+23. Create recommendation logic/API.
+24. Create settings API.
+25. Create export/import API.
+26. Build dashboard layout.
+27. Build account/profile mapping UI.
+28. Build quota status table.
+29. Build Refresh One button.
+30. Build Refresh All button.
+31. Build loading/success/error states.
+32. Build recommendation panel.
+33. Build history page.
+34. Build settings page.
+35. Build manual override fallback.
+36. Build import/export UI.
+37. Add audit logs.
+38. Add SECURITY.md.
+39. Add README/INSTALL/USAGE.
+40. Add quota reader feasibility report.
+41. Only then consider extension.
 ```
 
 ---
 
-# 9. Chốt hướng phát triển
+# Final Acceptance Criteria
 
-Hướng phát triển phù hợp nhất:
+Dự án đạt MVP khi:
+
+```text
+User chạy app được trên localhost.
+User thêm được 8 account.
+User map được từng account với Chrome Profile.
+User bấm Refresh One được.
+User bấm Refresh All được.
+Refresh All không dừng nếu 1 account lỗi.
+Mỗi account có quota status riêng.
+Mỗi lần refresh có history riêng.
+Error hiển thị rõ theo từng account.
+Quota tốt cũ không bị mất khi refresh lỗi.
+Dashboard gợi ý account nên dùng.
+Manual override tồn tại nhưng chỉ là fallback.
+Settings lưu được.
+Export JSON hoạt động.
+Không có password/cookie/token field.
+Không có proxy endpoint.
+Không có auto-rotate.
+Có SECURITY.md.
+Có quota reader feasibility report.
+```
+
+---
+
+# Final Direction
+
+AG Quota Manager phải đi theo hướng:
 
 ```text
 Next.js + React
 Local API routes
-SQLite
+SQLite + Prisma
 Dashboard localhost
-Auto quota reader
+Quota reader
+Refresh one account
 Refresh all accounts
 Manual fallback
 Optional Antigravity extension
 ```
 
-Dự án nên giống 9Router ở phần:
+Dự án giống 9Router chỉ ở phần:
 
 ```text
 Local dashboard
@@ -1451,7 +1341,7 @@ Account/provider table
 Import/export config
 ```
 
-Nhưng tuyệt đối không làm phần:
+Dự án không được giống 9Router ở phần:
 
 ```text
 Proxy
@@ -1460,40 +1350,4 @@ Auto fallback provider
 Auto account rotation
 Token/cookie storage
 Quota bypass
-```
-
----
-
-# 10. Kết luận
-
-AG Quota Manager nên phát triển theo hướng:
-
-```text
-Local Web Dashboard trước
-→ SQLite Database
-→ Local API routes
-→ Account/Profile Mapping
-→ Quota Reader
-→ Refresh One
-→ Refresh All
-→ Auto Refresh
-→ Status Dashboard
-→ Recommendation
-→ History/Analytics
-→ Manual Fallback
-→ Settings
-→ Import/Export
-→ Security
-→ Optional Extension
-```
-
-Điểm cốt lõi:
-
-```text
-Tool phải tự check quota.
-Refresh All là tính năng chính.
-Manual chỉ là fallback.
-Không proxy.
-Không auto-rotate.
-Không lưu secret.
 ```
