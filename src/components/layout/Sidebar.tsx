@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, Activity, Settings, Rocket, Grid2X2 } from "lucide-react";
+import { LayoutDashboard, Users, Activity, Settings, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: Rocket },
-  { name: "Accounts", href: "/accounts", icon: Grid2X2 },
+  { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Accounts", href: "/accounts", icon: Users },
   { name: "History", href: "/history", icon: Activity },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
@@ -16,40 +16,44 @@ export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <div className="flex flex-col justify-center h-full px-4 relative z-50">
-      <div className="flex flex-col items-center bg-[#1a1f2e]/80 backdrop-blur-xl border border-[#2a3041] rounded-[24px] py-4 shadow-xl">
-        <div className="mb-6 flex justify-center w-full">
-          <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
-          <div className="w-2 h-2 rounded-full bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.6)] mx-1"></div>
-          <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
-        </div>
-        
-        <nav className="flex flex-col items-center space-y-4 px-2 w-full">
-          {navigation.map((item) => {
-            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                title={item.name}
+    <div className="flex h-full w-64 flex-col bg-[#161a23] text-zinc-300 border-r border-[#2a3041] shadow-2xl relative z-10">
+      <div className="flex h-16 items-center px-6 border-b border-[#2a3041]">
+        <Database className="h-6 w-6 text-blue-500 mr-3" />
+        <span className="text-lg font-bold tracking-tight text-white">AG Quota</span>
+      </div>
+      <nav className="flex-1 space-y-1 px-4 py-6">
+        {navigation.map((item) => {
+          const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+          return (
+            <Link
+              key={item.name}
+              href={item.href}
+              className={cn(
+                "group flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                isActive
+                  ? "bg-[#2563eb]/10 text-[#60a5fa] ring-1 ring-[#2563eb]/20"
+                  : "text-[#64748b] hover:bg-[#1e293b] hover:text-zinc-200"
+              )}
+            >
+              <item.icon
                 className={cn(
-                  "group flex items-center justify-center rounded-2xl w-10 h-10 transition-all duration-200",
-                  isActive
-                    ? "bg-[#2563eb] text-white shadow-[0_0_15px_rgba(37,99,235,0.4)]"
-                    : "text-[#64748b] hover:bg-[#1e293b] hover:text-white"
+                  "mr-3 h-5 w-5 flex-shrink-0 transition-colors",
+                  isActive ? "text-[#3b82f6]" : "text-[#64748b] group-hover:text-zinc-300"
                 )}
-              >
-                <item.icon
-                  className={cn(
-                    "h-5 w-5 flex-shrink-0 transition-colors",
-                    isActive ? "text-white" : "text-[#64748b] group-hover:text-white"
-                  )}
-                  aria-hidden="true"
-                />
-              </Link>
-            );
-          })}
-        </nav>
+                aria-hidden="true"
+              />
+              {item.name}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className="p-4 border-t border-[#2a3041] text-[11px] text-[#64748b] flex flex-col items-center">
+        <div className="mb-3 flex justify-center gap-1.5 w-full">
+          <div className="w-2 h-2 rounded-full bg-red-500/80"></div>
+          <div className="w-2 h-2 rounded-full bg-yellow-500/80"></div>
+          <div className="w-2 h-2 rounded-full bg-green-500/80"></div>
+        </div>
+        Local-first Quota Manager
       </div>
     </div>
   );

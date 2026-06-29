@@ -1,7 +1,14 @@
 import { PrismaClient } from '@prisma/client'
+import { PrismaLibSql } from '@prisma/adapter-libsql'
 
 const prismaClientSingleton = () => {
-  return new PrismaClient()
+  let url = process.env.DATABASE_URL || 'file:./dev.db'
+  if (url === 'undefined' || !url) {
+    url = 'file:./dev.db'
+  }
+  
+  const adapter = new PrismaLibSql({ url })
+  return new PrismaClient({ adapter })
 }
 
 declare global {
